@@ -14,10 +14,15 @@ const requireAuth = async (req, res, next) => {
         }
 
         const decoded = verifyToken(token);
+        const targetUserId = decoded?.userId || decoded?.id || decoded?.sub;
+
+        if (!targetUserId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized: Invalid token payload' });
+        }
         
         // Verify user still exists in database
         const user = await prisma.user.findUnique({
-            where: { id: decoded.userId }
+            where: { id: targetUserId }
         });
 
         if (!user) {

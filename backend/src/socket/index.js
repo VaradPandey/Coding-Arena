@@ -30,8 +30,13 @@ const initializeSocket = (httpServer) => {
             
             // Attach user to socket. 
             // DB lookup omitted intentionally per architecture design.
+            const targetUserId = decoded?.userId || decoded?.id || decoded?.sub;
+            if (!targetUserId) {
+                return next(new Error('Unauthorized: Invalid token payload'));
+            }
+
             socket.user = {
-                id: decoded.userId,
+                id: targetUserId,
                 username: decoded.username,
                 rating: decoded.rating ?? 0
             };
