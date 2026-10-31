@@ -13,7 +13,7 @@ export const PlayerCard = ({
   isLeader = false
 }) => {
   if (!user) return null;
-  const tier = getTier(user.rating ?? 1500);
+  const tier = getTier(user.rating ?? 0);
 
   return (
     <motion.div 
@@ -46,7 +46,7 @@ export const PlayerCard = ({
             <span className="font-semibold text-foreground truncate text-sm">
               {user.username || 'Player'}
             </span>
-            <TierBadge rating={user.rating ?? 1500} size="sm" showLabel={false} />
+            <TierBadge rating={user.rating ?? 0} size="sm" showLabel={false} />
             {isLeader && <Crown size={14} className="text-yellow-500 shrink-0" />}
             {title && (
               <span className="text-[10px] uppercase tracking-widest bg-white/10 px-1.5 py-0.5 rounded text-white/70">
@@ -58,7 +58,7 @@ export const PlayerCard = ({
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
             <div className="flex items-center gap-1">
               <Trophy size={12} className="text-primary/70" />
-              <span>{user.rating ?? 1500}</span>
+              <span>{user.rating ?? 0}</span>
               <span className="text-[10px] font-semibold" style={{ color: tier.color }}>
                 ({tier.name})
               </span>

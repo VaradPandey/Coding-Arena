@@ -23,13 +23,14 @@ const rawMode = process.env.APP_MODE || process.env.MODE || (isProduction ? 'pro
 const isProdMode = rawMode.toLowerCase() === 'prod' || rawMode.toLowerCase() === 'production';
 
 // Dynamically select Redis, Database & CORS depending on mode
-const redisUrl = isProdMode
+const cleanStr = (s) => (typeof s === 'string' ? s.trim().replace(/^["']|["']$/g, '') : s);
+const redisUrl = cleanStr(isProdMode
     ? (process.env.PROD_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379')
-    : (process.env.LOCAL_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379');
+    : (process.env.REDIS_URL || process.env.LOCAL_REDIS_URL || 'redis://localhost:6379'));
 
-const databaseUrl = isProdMode
+const databaseUrl = cleanStr(isProdMode
     ? (process.env.PROD_DATABASE_URL || process.env.DATABASE_URL)
-    : (process.env.LOCAL_DATABASE_URL || process.env.DATABASE_URL);
+    : (process.env.LOCAL_DATABASE_URL || process.env.DATABASE_URL));
 
 const allowedOriginsRaw = isProdMode
     ? (process.env.PROD_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS || 'http://localhost:5173')
@@ -44,7 +45,7 @@ const config = {
     mode: isProdMode ? 'prod' : 'local',
     isProduction,
     nodeEnv: process.env.NODE_ENV || 'development',
-    port: process.env.PORT || 5000,
+    port: parseInt(process.env.PORT || '5000', 10),
     databaseUrl,
     redisUrl,
     judgeWorkerUrl,

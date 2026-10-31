@@ -99,8 +99,8 @@ export const PreMatchSetup = () => {
   const opponentName = opponent?.username || (room?.players && Object.entries(room.players).find(([id]) => id !== currentUserId)?.[1]?.username) || 'Opponent';
   const myName = user?.username || (currentUserId && room?.players?.[currentUserId]?.username) || 'You';
 
-  const myRating = user?.rating || (currentUserId && room?.players?.[currentUserId]?.rating) || 1500;
-  const opponentRating = opponent?.rating || (room?.players && Object.entries(room.players).find(([id]) => id !== currentUserId)?.[1]?.rating) || 1500;
+  const myRating = user?.rating ?? (currentUserId && room?.players?.[currentUserId]?.rating) ?? 0;
+  const opponentRating = opponent?.rating ?? (room?.players && Object.entries(room.players).find(([id]) => id !== currentUserId)?.[1]?.rating) ?? 0;
 
   const isTopicDone = Boolean(choices.topic);
   const isCountDone = Boolean(choices.questionCount);

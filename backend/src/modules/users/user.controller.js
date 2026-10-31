@@ -19,8 +19,21 @@ const getMe = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const { displayName, avatar } = req.body;
+
+        if (displayName !== undefined && typeof displayName !== 'string') {
+            return res.status(400).json({ success: false, message: 'displayName must be a string' });
+        }
+        if (displayName && (displayName.trim().length < 2 || displayName.trim().length > 50)) {
+            return res.status(400).json({ success: false, message: 'Display name must be between 2 and 50 characters' });
+        }
+        if (avatar !== undefined && typeof avatar !== 'string') {
+            return res.status(400).json({ success: false, message: 'avatar must be a string' });
+        }
         
-        const updatedUser = await userService.updateUser(req.user.id, { displayName, avatar });
+        const updatedUser = await userService.updateUser(req.user.id, { 
+            displayName: displayName ? displayName.trim() : null, 
+            avatar: avatar ? avatar.trim() : null 
+        });
         
         res.status(200).json({
             success: true,
@@ -28,6 +41,39 @@ const updateProfile = async (req, res) => {
         });
     } catch (error) {
         console.error('Update Profile Error:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+const getLeaderboard = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit, 10) || 50;
+        const offset = parseInt(req.query.offset, 10) || 0;
+
+        const result = await userService.getLeaderboard({ limit, offset });
+
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error('Get Leaderboard Error:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+const getMyRank = async (req, res) => {
+    try {
+        const rankData = await userService.getUserRank(req.user.id);
+        if (!rankData) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        res.status(200).json({
+            success: true,
+            data: rankData
+        });
+    } catch (error) {
+        console.error('Get My Rank Error:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
@@ -81,8 +127,9 @@ const getMyMatches = async (req, res) => {
 module.exports = {
     getMe,
     updateProfile,
+    getLeaderboard,
+    getMyRank,
     getMySubmissions,
     getMySolvedProblems,
     getMyMatches
 };
-

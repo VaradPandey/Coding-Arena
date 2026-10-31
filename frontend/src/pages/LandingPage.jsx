@@ -7,7 +7,6 @@ import {
   HowItWorks,
   GameModes,
   WhyCodingArena,
-  PlatformMetrics,
   RoadmapTeaser,
   FinalCTA,
   Footer
@@ -22,7 +21,6 @@ const LandingPage = () => {
       <HowItWorks />
       <GameModes />
       <WhyCodingArena />
-      <PlatformMetrics />
       <RoadmapTeaser />
       <FinalCTA />
       <Footer />

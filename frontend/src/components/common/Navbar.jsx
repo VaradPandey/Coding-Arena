@@ -1,11 +1,27 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/contexts/SocketContext";
 import { SOCKET_STATUS, SERVER_EVENTS } from "@/socket/events";
-import { Swords, Wifi, WifiOff, Loader2, Menu, X, LayoutDashboard, Code2, User, LogOut, LogIn, UserPlus, Users } from "lucide-react";
+import { 
+  Swords, 
+  Wifi, 
+  WifiOff, 
+  Loader2, 
+  Menu, 
+  X, 
+  LayoutDashboard, 
+  Code2, 
+  User, 
+  LogOut, 
+  LogIn, 
+  UserPlus, 
+  Users,
+  Trophy
+} from "lucide-react";
 import { TierBadge } from "@/components/common/TierBadge";
 import { FriendsDrawer } from "@/features/friends/components/FriendsDrawer";
 import { IncomingChallengeModal } from "@/features/challenge/components/IncomingChallengeModal";
@@ -100,6 +116,19 @@ export const Navbar = ({ variant = "landing" }) => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Handle Escape key to close mobile drawer
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    if (mobileMenuOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [mobileMenuOpen]);
+
   const handleLogout = () => {
     logout();
     setMobileMenuOpen(false);
@@ -132,11 +161,11 @@ export const Navbar = ({ variant = "landing" }) => {
                 <Link to="/problems" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Problems
                 </Link>
+                <Link to="/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Leaderboard
+                </Link>
                 <Link to="/profile" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Profile
-                </Link>
-                <Link to="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors opacity-50 cursor-not-allowed" title="Coming Soon">
-                  Leaderboard
                 </Link>
               </>
             ) : (
@@ -157,7 +186,7 @@ export const Navbar = ({ variant = "landing" }) => {
                 >
                   Game Modes
                 </a>
-                <Link to="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors opacity-50 cursor-not-allowed" title="Coming Soon">
+                <Link to="/leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Leaderboard
                 </Link>
               </>
@@ -219,11 +248,11 @@ export const Navbar = ({ variant = "landing" }) => {
               <Link 
                 to="/profile" 
                 className="hidden sm:inline-flex items-center gap-1.5 p-1 pr-2.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-all hover:scale-105"
-                title={`Rank: ${user?.rating || 1500} Elo - View Profile`}
+                title={`Rank: ${user?.rating ?? 0} Elo - View Profile`}
               >
-                <TierBadge rating={user?.rating || 1500} size="sm" showLabel={false} />
+                <TierBadge rating={user?.rating ?? 0} size="sm" showLabel={false} />
                 <span className="text-xs font-mono font-bold text-foreground">
-                  {user?.rating || 1500}
+                  {user?.rating ?? 0}
                 </span>
               </Link>
 
@@ -245,150 +274,211 @@ export const Navbar = ({ variant = "landing" }) => {
 
           {/* Mobile Hamburger Toggle */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen(true)}
             className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
-            aria-label="Toggle Navigation Menu"
+            aria-label="Open Navigation Menu"
+            aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            <Menu size={22} />
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-b border-border/60 bg-background/95 backdrop-blur-xl overflow-hidden"
-          >
-            <div className="px-5 py-4 space-y-3">
-              {/* User summary if authenticated */}
-              {isAuthenticated && user && (
-                <div className="pb-3 border-b border-border/40 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-muted-foreground block">Signed in as</span>
-                    <span className="text-sm font-bold text-foreground">{user.username}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <TierBadge rating={user.rating || 1500} size="sm" showLabel={true} />
-                    <span className="text-xs font-mono font-bold text-foreground/80">
-                      {user.rating || 1500}
+      {/* Accessible Mobile Right-Side Drawer */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <div className="fixed inset-0 z-[100] md:hidden overflow-hidden">
+              {/* Dimmed Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                aria-hidden="true"
+              />
+
+              {/* Right Slide-in Drawer */}
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Mobile Navigation Menu"
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 26, stiffness: 240 }}
+                className="absolute top-0 right-0 bottom-0 w-full max-w-xs bg-[#0b0c13] border-l border-white/10 shadow-2xl flex flex-col z-50 text-foreground"
+              >
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-black/40">
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src="/favicon-32x32.png" 
+                      alt="Coding Arena Logo" 
+                      className="w-6 h-6 rounded-md border border-white/10" 
+                    />
+                    <span className="font-extrabold tracking-tight text-sm text-foreground">
+                      CODING<span className="text-primary">ARENA</span>
                     </span>
                   </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+                    aria-label="Close Navigation Menu"
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
-              )}
 
-              {/* Navigation links */}
-              <div className="space-y-1 pt-1">
-                {isAuthenticated ? (
-                  <>
-                    <Button
-                      className="w-full justify-start gap-2 bg-gradient-to-r from-primary to-indigo-600 text-white font-bold mb-3 shadow-md"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        navigate('/matchmaking');
-                      }}
-                    >
-                      <Swords size={16} />
-                      Queue Up / Find Match
-                    </Button>
-
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/90 hover:bg-white/5 transition-colors"
-                    >
-                      <LayoutDashboard size={17} className="text-primary" />
-                      Dashboard
-                    </Link>
-
-                    <Link
-                      to="/problems"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/90 hover:bg-white/5 transition-colors"
-                    >
-                      <Code2 size={17} className="text-primary" />
-                      Problems
-                    </Link>
-
-                    <Link
-                      to="/profile"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/90 hover:bg-white/5 transition-colors"
-                    >
-                      <User size={17} className="text-primary" />
-                      Profile
-                    </Link>
-
-                    <button
-                      onClick={() => {
-                        setFriendsDrawerOpen(true);
-                        setMobileMenuOpen(false);
-                      }}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-200 hover:bg-white/5 transition-colors text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Users size={17} className="text-primary" />
-                        <span>Friends & 1v1</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {friendStats.onlineCount > 0 && (
-                          <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            {friendStats.onlineCount} online
-                          </span>
-                        )}
-                        {friendStats.pendingRequestsCount > 0 && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white">
-                            {friendStats.pendingRequestsCount} new
-                          </span>
-                        )}
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
-                    >
-                      <LogOut size={17} />
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      to="/problems"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/90 hover:bg-white/5 transition-colors"
-                    >
-                      <Code2 size={17} className="text-primary" />
-                      Problems
-                    </Link>
-
-                    <div className="pt-2 grid grid-cols-2 gap-2">
-                      <Button variant="outline" className="w-full gap-2" asChild>
-                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                          <LogIn size={15} />
-                          Login
-                        </Link>
-                      </Button>
-                      <Button className="w-full gap-2" asChild>
-                        <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                          <UserPlus size={15} />
-                          Register
-                        </Link>
-                      </Button>
+                {/* User Summary if Authenticated */}
+                {isAuthenticated && user && (
+                  <div className="p-4 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] text-muted-foreground block">Signed in as</span>
+                      <span className="text-sm font-bold text-foreground truncate max-w-[150px] block">
+                        {user.displayName || user.username}
+                      </span>
                     </div>
-                  </>
+                    <div className="flex items-center gap-1.5">
+                      <TierBadge rating={user.rating ?? 0} size="sm" showLabel={true} />
+                      <span className="text-xs font-mono font-bold text-foreground">
+                        {user.rating ?? 0}
+                      </span>
+                    </div>
+                  </div>
                 )}
-              </div>
+
+                {/* Navigation Links */}
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5">
+                  {isAuthenticated ? (
+                    <>
+                      <Button
+                        className="w-full justify-start gap-2 bg-gradient-to-r from-primary to-indigo-600 text-white font-bold mb-3 shadow-md"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          navigate('/matchmaking');
+                        }}
+                      >
+                        <Swords size={16} />
+                        Queue Up / Find Match
+                      </Button>
+
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-white/5 transition-colors"
+                      >
+                        <LayoutDashboard size={17} className="text-primary" />
+                        Dashboard
+                      </Link>
+
+                      <Link
+                        to="/problems"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-white/5 transition-colors"
+                      >
+                        <Code2 size={17} className="text-primary" />
+                        Problems
+                      </Link>
+
+                      <Link
+                        to="/leaderboard"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-white/5 transition-colors"
+                      >
+                        <Trophy size={17} className="text-primary" />
+                        Leaderboard
+                      </Link>
+
+                      <Link
+                        to="/profile"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-white/5 transition-colors"
+                      >
+                        <User size={17} className="text-primary" />
+                        Profile
+                      </Link>
+
+                      <button
+                        onClick={() => {
+                          setFriendsDrawerOpen(true);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-white/5 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Users size={17} className="text-primary" />
+                          <span>Friends & 1v1</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {friendStats.onlineCount > 0 && (
+                            <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              {friendStats.onlineCount} online
+                            </span>
+                          )}
+                          {friendStats.pendingRequestsCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white">
+                              {friendStats.pendingRequestsCount} new
+                            </span>
+                          )}
+                        </div>
+                      </button>
+
+                      <div className="pt-4 mt-4 border-t border-white/10">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
+                        >
+                          <LogOut size={17} />
+                          Logout
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/problems"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-white/5 transition-colors"
+                      >
+                        <Code2 size={17} className="text-primary" />
+                        Problems
+                      </Link>
+
+                      <Link
+                        to="/leaderboard"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-white/5 transition-colors"
+                      >
+                        <Trophy size={17} className="text-primary" />
+                        Leaderboard
+                      </Link>
+
+                      <div className="pt-6 grid grid-cols-2 gap-2">
+                        <Button variant="outline" className="w-full gap-2" asChild>
+                          <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                            <LogIn size={15} />
+                            Login
+                          </Link>
+                        </Button>
+                        <Button className="w-full gap-2" asChild>
+                          <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                            <UserPlus size={15} />
+                            Register
+                          </Link>
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Global Friends Drawer & Incoming Challenge Modal */}
       {isAuthenticated && (

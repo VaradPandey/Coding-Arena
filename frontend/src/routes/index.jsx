@@ -14,6 +14,8 @@ import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import DashboardPage from '../pages/DashboardPage';
 import ProfilePage from '../pages/ProfilePage';
+import LeaderboardPage from '../pages/LeaderboardPage';
+import SubmissionDetailPage from '../pages/SubmissionDetailPage';
 import MatchmakingPage from '../features/matchmaking/pages/MatchmakingPage';
 import { PrivateLobbyPage } from '../features/lobby/pages/PrivateLobbyPage';
 
@@ -21,7 +23,6 @@ import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 import { PublicOnlyRoute } from '../components/auth/PublicOnlyRoute';
 
 // Placeholder Pages
-const SubmissionDetailsPlaceholder = () => <div>Submission Details Placeholder</div>;
 const NotFoundPlaceholder = () => <div>404 Not Found</div>;
 
 export const router = createBrowserRouter([
@@ -45,6 +46,9 @@ export const router = createBrowserRouter([
       { path: 'problems', element: <ProblemsPage /> },
       { path: 'problems/:id', element: <ProblemPage /> },
       
+      // Public Leaderboard
+      { path: 'leaderboard', element: <LeaderboardPage /> },
+
       // Auth Routes
       { 
         path: 'login', 
@@ -77,6 +81,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        ) 
+      },
+      { 
+        path: 'submissions/:id', 
+        element: (
+          <ProtectedRoute>
+            <SubmissionDetailPage />
           </ProtectedRoute>
         ) 
       },
@@ -117,7 +129,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         )
       },
-      { path: 'submissions/:id', element: <SubmissionDetailsPlaceholder /> },
     ],
   },
   {

@@ -50,9 +50,24 @@ class SubmissionService {
 
     async getSubmission(id) {
         const result = await pool.query(`
-            SELECT id as submission_id, status, verdict, execution_time_ms, language, source_code, created_at, started_at, finished_at
-            FROM submissions
-            WHERE id = $1
+            SELECT 
+                s.id,
+                s.id as submission_id,
+                s.user_id,
+                s.problem_id,
+                s.status,
+                s.verdict,
+                s.execution_time_ms,
+                s.language,
+                s.source_code,
+                s.created_at,
+                s.started_at,
+                s.finished_at,
+                p.title as problem_title,
+                p.difficulty as problem_difficulty
+            FROM submissions s
+            LEFT JOIN problems p ON s.problem_id = p.id
+            WHERE s.id = $1
         `, [id]);
 
         if (result.rowCount === 0) {

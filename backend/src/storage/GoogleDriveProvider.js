@@ -30,8 +30,6 @@ class GoogleDriveProvider extends StorageProvider {
 
     async verifyCache(problemId) {
         const asset = await this.getAsset(problemId);
-        if (!asset) return false;
-
         const paddedId = String(problemId).padStart(3, '0');
         const problemCacheDir = path.join(this.cacheDir, paddedId);
         const metaPath = path.join(problemCacheDir, '.meta.json');
@@ -39,7 +37,7 @@ class GoogleDriveProvider extends StorageProvider {
         if (fs.existsSync(metaPath)) {
             try {
                 const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-                if (meta.version === asset.version && meta.checksum === asset.checksum) {
+                if (!asset || (meta.version === asset.version && meta.checksum === asset.checksum)) {
                     return true;
                 }
             } catch (e) {
@@ -55,13 +53,33 @@ class GoogleDriveProvider extends StorageProvider {
 
     async downloadArchive(problemId) {
         const asset = await this.getAsset(problemId);
-        if (!asset || !asset.file_id) {
-            throw new Error(`Google Drive asset not found for problem ${problemId}`);
-        }
-
         const paddedId = String(problemId).padStart(3, '0');
         const problemCacheDir = path.join(this.cacheDir, paddedId);
         const tempZipPath = path.join(this.cacheDir, `${paddedId}-temp.zip`);
+
+        // Check if we have the local export zip
+        const localZipPath = path.join(__dirname, '../../exports/google_drive', `${paddedId}-private.zip`);
+        if (fs.existsSync(localZipPath)) {
+            if (fs.existsSync(problemCacheDir)) {
+                fs.rmSync(problemCacheDir, { recursive: true, force: true });
+            }
+            fs.mkdirSync(problemCacheDir, { recursive: true });
+
+            const zip = new AdmZip(localZipPath);
+            zip.extractAllTo(problemCacheDir, true);
+
+            const meta = {
+                version: asset ? asset.version : 1,
+                checksum: asset ? asset.checksum : 'local',
+                downloaded_at: new Date().toISOString()
+            };
+            fs.writeFileSync(path.join(problemCacheDir, '.meta.json'), JSON.stringify(meta, null, 2));
+            return problemCacheDir;
+        }
+
+        if (!asset || !asset.file_id || asset.file_id === 'local_dev_mock') {
+            throw new Error(`Google Drive asset not found for problem ${problemId}`);
+        }
 
         if (fs.existsSync(problemCacheDir)) {
             fs.rmSync(problemCacheDir, { recursive: true, force: true });

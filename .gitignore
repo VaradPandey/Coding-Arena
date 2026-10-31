@@ -23,3 +23,8 @@ Thumbs.db
 
 # Temporary execution directories
 tmp/
+skills/
+project_details/
+.neon
+.playwright-mcp/
+.agents/

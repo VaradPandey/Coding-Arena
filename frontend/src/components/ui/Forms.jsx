@@ -98,12 +98,18 @@ export const Select = React.forwardRef(({ options = [], value, onChange, placeho
             {options.map((option) => (
               <button
                 key={option.value}
+                type="button"
+                disabled={option.disabled}
                 onClick={() => {
+                  if (option.disabled) return;
                   onChange(option.value);
                   setIsOpen(false);
                 }}
                 className={cn(
-                  "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:bg-white/10 hover:text-foreground focus:bg-white/10",
+                  "relative flex w-full select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors",
+                  option.disabled 
+                    ? "opacity-50 cursor-not-allowed text-muted-foreground" 
+                    : "cursor-pointer hover:bg-white/10 hover:text-foreground focus:bg-white/10",
                   value === option.value ? "bg-white/5 text-foreground font-medium" : "text-muted-foreground"
                 )}
               >

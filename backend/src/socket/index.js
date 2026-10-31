@@ -33,7 +33,7 @@ const initializeSocket = (httpServer) => {
             socket.user = {
                 id: decoded.userId,
                 username: decoded.username,
-                rating: decoded.rating ?? 1500
+                rating: decoded.rating ?? 0
             };
 
             next();

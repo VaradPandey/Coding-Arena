@@ -1,19 +1,23 @@
 import React from 'react';
 import { Select } from '@/components/ui/Forms';
 
-export const LanguageSelector = ({ value, onChange, className }) => {
-  // In the future, this list will be populated dynamically from the backend
+export const LanguageSelector = ({ value = 'cpp', onChange, className }) => {
   const languageOptions = [
-    { label: "C++ (GCC 11.2.0)", value: "cpp" },
-    { label: "Python (3.9.5)", value: "python" },
-    { label: "Java (OpenJDK 17)", value: "java" },
-    { label: "JavaScript (Node 16)", value: "javascript" },
+    { label: "C++17 (GCC 11.2) - Supported", value: "cpp" },
+    { label: "Python 3.9 (Coming soon)", value: "python", disabled: true },
+    { label: "Java 17 (Coming soon)", value: "java", disabled: true },
+    { label: "JavaScript / Node (Coming soon)", value: "javascript", disabled: true },
   ];
 
   return (
     <Select
-      value={value}
-      onChange={onChange}
+      value="cpp"
+      onChange={(selected) => {
+        // Only cpp is supported; reject or ignore any non-cpp value
+        if (selected === 'cpp' && onChange) {
+          onChange('cpp');
+        }
+      }}
       options={languageOptions}
       className={className}
       placeholder="Select Language"

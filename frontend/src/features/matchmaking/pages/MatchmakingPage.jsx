@@ -9,6 +9,7 @@ import { GAME_MODES, MATCHMAKING_STATES } from '../constants/matchmaking.constan
 import { MatchmakingHero } from '../components/MatchmakingHero';
 import { QueueCard } from '../components/QueueCard';
 import { QueueTimeline } from '../components/QueueTimeline';
+import { QueueStatistics } from '../components/QueueStatistics';
 import { GameModeCard } from '../components/GameModeCard';
 import { MatchmakingRules } from '../components/MatchmakingRules';
 import { RecentMatchesCard } from '../components/RecentMatchesCard';
@@ -55,9 +56,10 @@ const MatchmakingPage = () => {
         {/* Core Queue Area */}
         <Section>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Col: Timeline & Rules */}
+            {/* Left Col: Timeline, Live Statistics & Rules */}
             <div className="space-y-6">
               <QueueTimeline status={status} />
+              <QueueStatistics />
               <MatchmakingRules />
             </div>
 
@@ -103,8 +105,6 @@ const MatchmakingPage = () => {
         <Section className="mt-12">
           <RecentMatchesCard />
         </Section>
-
-
 
         {/* Future Features */}
         <Section className="mt-12 border-t border-border/50 pt-12">

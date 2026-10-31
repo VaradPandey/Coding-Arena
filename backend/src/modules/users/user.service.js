@@ -173,7 +173,99 @@ class UserService {
             };
         });
     }
+
+    async getLeaderboard({ limit = 50, offset = 0 } = {}) {
+        const take = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
+        const skip = Math.max(parseInt(offset, 10) || 0, 0);
+
+        const [users, totalUsers] = await Promise.all([
+            prisma.user.findMany({
+                take: take,
+                skip: skip,
+                orderBy: [
+                    { rating: 'desc' },
+                    { wins: 'desc' },
+                    { createdAt: 'asc' }
+                ],
+                select: {
+                    id: true,
+                    username: true,
+                    displayName: true,
+                    avatar: true,
+                    rating: true,
+                    maxRating: true,
+                    wins: true,
+                    losses: true,
+                    draws: true,
+                    problemsSolved: true,
+                    createdAt: true
+                }
+            }),
+            prisma.user.count()
+        ]);
+
+        const leaderboard = users.map((u, idx) => ({
+            rank: skip + idx + 1,
+            id: u.id,
+            username: u.username,
+            displayName: u.displayName || u.username,
+            avatar: u.avatar,
+            rating: u.rating ?? 0,
+            maxRating: u.maxRating ?? u.rating ?? 0,
+            wins: u.wins ?? 0,
+            losses: u.losses ?? 0,
+            draws: u.draws ?? 0,
+            problemsSolved: u.problemsSolved ?? 0,
+            createdAt: u.createdAt
+        }));
+
+        return {
+            leaderboard,
+            totalUsers,
+            limit: take,
+            offset: skip
+        };
+    }
+
+    async getUserRank(userId) {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatar: true,
+                rating: true,
+                wins: true,
+                losses: true,
+                draws: true
+            }
+        });
+
+        if (!user) {
+            return null;
+        }
+
+        const rating = user.rating ?? 0;
+
+        const [higherCount, totalUsers] = await Promise.all([
+            prisma.user.count({
+                where: {
+                    rating: { gt: rating }
+                }
+            }),
+            prisma.user.count()
+        ]);
+
+        return {
+            rank: higherCount + 1,
+            totalUsers,
+            rating,
+            wins: user.wins ?? 0,
+            losses: user.losses ?? 0,
+            draws: user.draws ?? 0
+        };
+    }
 }
 
 module.exports = new UserService();
-

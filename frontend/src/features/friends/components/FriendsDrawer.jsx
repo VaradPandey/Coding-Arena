@@ -366,14 +366,14 @@ export const FriendsDrawer = ({ isOpen, onClose }) => {
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-bold text-white truncate">{friend.username}</span>
-                                    <TierBadge rating={friend.rating || 1500} size="sm" />
+                                    <TierBadge rating={friend.rating ?? 0} size="sm" />
                                   </div>
                                   <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
                                     <span className={isBusy ? 'text-amber-400' : 'text-emerald-400 font-medium'}>
                                       {statusLabel}
                                     </span>
                                     <span>•</span>
-                                    <span>{friend.rating || 1500} ELO</span>
+                                    <span>{friend.rating ?? 0} ELO</span>
                                   </div>
                                 </div>
                               </div>
@@ -428,7 +428,7 @@ export const FriendsDrawer = ({ isOpen, onClose }) => {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-semibold text-white truncate">{friend.username}</span>
-                                <TierBadge rating={friend.rating || 1500} size="sm" />
+                                <TierBadge rating={friend.rating ?? 0} size="sm" />
                               </div>
                               <div className="text-[11px] text-neutral-400">
                                 {friend.presence?.isOnline ? (
@@ -497,9 +497,9 @@ export const FriendsDrawer = ({ isOpen, onClose }) => {
                               <div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-xs font-bold text-white">{user.username}</span>
-                                  <TierBadge rating={user.rating || 1500} size="sm" />
+                                  <TierBadge rating={user.rating ?? 0} size="sm" />
                                 </div>
-                                <span className="text-[10px] text-neutral-400">{user.rating || 1500} ELO</span>
+                                <span className="text-[10px] text-neutral-400">{user.rating ?? 0} ELO</span>
                               </div>
                             </div>
 
@@ -569,7 +569,7 @@ export const FriendsDrawer = ({ isOpen, onClose }) => {
                                 </div>
                                 <div>
                                   <div className="text-xs font-bold text-white">{req.user.username}</div>
-                                  <div className="text-[10px] text-neutral-400">{req.user.rating || 1500} ELO</div>
+                                  <div className="text-[10px] text-neutral-400">{req.user.rating ?? 0} ELO</div>
                                 </div>
                               </div>
 

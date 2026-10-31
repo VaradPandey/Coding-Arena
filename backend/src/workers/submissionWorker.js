@@ -6,7 +6,6 @@ const judgeEngine = require('../judge/JudgeEngine');
 // Setup Redis connection config based on current mode
 const redisUrl = config.redisUrl;
 
-
 const connection = new (require('ioredis'))(redisUrl, {
     maxRetriesPerRequest: null,
     retryStrategy(times) {
@@ -105,9 +104,6 @@ return cjson.encode({
     winnerId = winnerId
 })
 `;
-
-
-// Later down in processing:
 
 const worker = new Worker('judge', async (job) => {
     const { submission_id, problem_id, language, user_id } = job.data;
@@ -274,18 +270,49 @@ worker.on('error', (err) => {
     console.error("❌ Judge Worker encountered an error:", err);
 });
 
-// Render Web Service Health Check Server
-// In production or when WORKER_PORT is set, bind an HTTP server so Render Web Service marks it healthy
+// Render Web Service Health Check & Synchronous Sample Runner Server
 const http = require('http');
+const runEngine = require('../judge/RunEngine');
 const isProd = process.env.NODE_ENV === 'production';
 const WORKER_HTTP_PORT = process.env.WORKER_PORT || (isProd ? (process.env.PORT || 10000) : null);
 
 let healthServer = null;
 if (WORKER_HTTP_PORT) {
-    healthServer = http.createServer((req, res) => {
+    healthServer = http.createServer(async (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+        if (req.method === 'OPTIONS') {
+            res.writeHead(204);
+            return res.end();
+        }
+
+        if (req.method === 'POST' && req.url === '/run') {
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk;
+                if (body.length > 512 * 1024) {
+                    req.destroy();
+                }
+            });
+            req.on('end', async () => {
+                try {
+                    const { problem_id, language, source_code } = JSON.parse(body);
+                    const result = await runEngine.run(problem_id, language, source_code);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(result));
+                } catch (err) {
+                    console.error('[Worker HTTP] Run error:', err);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: err.message || 'Execution error' }));
+                }
+            });
+            return;
+        }
+
         res.writeHead(200, { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Content-Type': 'application/json'
         });
         res.end(JSON.stringify({
             status: 'ok',
@@ -296,9 +323,8 @@ if (WORKER_HTTP_PORT) {
         }));
     });
 
-
     healthServer.listen(WORKER_HTTP_PORT, () => {
-        console.log(`[WORKER] Health check HTTP server listening on port ${WORKER_HTTP_PORT}`);
+        console.log(`[WORKER] Health check & runner HTTP server listening on port ${WORKER_HTTP_PORT}`);
     });
 }
 
@@ -329,4 +355,3 @@ async function gracefulShutdown() {
 
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
-

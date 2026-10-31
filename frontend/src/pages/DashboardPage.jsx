@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { userApi } from '@/api/users';
-import { Trophy, Swords, Shield, Target, Activity, Award, ArrowRight } from 'lucide-react';
+import { Trophy, Swords, Shield, Target, Activity, Award, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeSlideUp, staggerChildren } from '@/lib/motion';
 import { TierBadge, getTier } from '@/components/common/TierBadge';
@@ -41,7 +41,7 @@ export default function DashboardPage() {
   });
 
   const currentUser = profileResp?.data || user;
-  const currentRating = currentUser?.rating || 1500;
+  const currentRating = currentUser?.rating ?? 0;
   const tierInfo = getTier(currentRating);
 
   const { data: submissionsResp } = useQuery({
@@ -54,6 +54,12 @@ export default function DashboardPage() {
     queryFn: () => userApi.getMySolvedProblems(),
   });
 
+  const { data: rankResp, isLoading: isRankLoading, isError: isRankError } = useQuery({
+    queryKey: ['user', 'rank'],
+    queryFn: () => userApi.getMyRank(),
+  });
+
+  const rankData = rankResp?.data?.data || rankResp?.data;
   const recentSubmissions = Array.isArray(submissionsResp?.data)
     ? submissionsResp.data
     : (submissionsResp?.data?.submissions || []);
@@ -67,10 +73,14 @@ export default function DashboardPage() {
         <motion.div {...fadeSlideUp} className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">Good Evening, {currentUser?.displayName || currentUser?.username}!</h1>
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">
+                Good Evening, {currentUser?.displayName || currentUser?.username}!
+              </h1>
               <TierBadge rating={currentRating} size="md" showTitle={true} animated={true} />
             </div>
-            <p className="text-muted-foreground text-sm sm:text-base mt-1.5 sm:mt-2">Welcome back to the Arena. Ready for your next challenge?</p>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1.5 sm:mt-2">
+              Welcome back to the Arena. Ready for your next challenge?
+            </p>
           </div>
           <div className="flex gap-3">
             <Button asChild size="lg" className="shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 text-white font-bold">
@@ -117,21 +127,46 @@ export default function DashboardPage() {
             <Card className="border-border/50 bg-card/40 backdrop-blur-sm">
               <div className="divide-y divide-border/50">
                 {recentSubmissions.length > 0 ? (
-                  recentSubmissions.map((sub) => (
-                    <div key={sub.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                      <div>
-                        <div className="font-semibold text-sm hover:underline cursor-pointer">
-                          {sub.problem?.title || `Problem #${sub.problem_id}`}
+                  recentSubmissions.map((sub) => {
+                    const problemId = sub.problem_id || sub.problem?.id || sub.problems?.id;
+                    const problemTitle = sub.problem?.title || sub.problems?.title || `Problem #${problemId || sub.id}`;
+                    
+                    return (
+                      <div key={sub.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors gap-3">
+                        <div className="min-w-0">
+                          {/* Section 5: Recent activity problem title navigates to /problems/:id */}
+                          <Link 
+                            to={problemId ? `/problems/${problemId}` : '/problems'}
+                            className="font-semibold text-sm hover:underline hover:text-primary transition-colors truncate block"
+                          >
+                            {problemTitle}
+                          </Link>
+                          <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                            <span>{new Date(sub.created_at).toLocaleString()}</span>
+                            <span>•</span>
+                            <span className="font-mono uppercase">{sub.language || 'cpp'}</span>
+                            {sub.id && (
+                              <>
+                                <span>•</span>
+                                <Link 
+                                  to={`/submissions/${sub.id}`}
+                                  className="text-primary hover:underline font-mono"
+                                >
+                                  Details
+                                </Link>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {new Date(sub.created_at).toLocaleString()} • {sub.language}
-                        </div>
+
+                        <Link to={`/submissions/${sub.id}`}>
+                          <Badge variant={sub.verdict === 'Accepted' ? 'success' : 'destructive'} className="shrink-0 cursor-pointer">
+                            {sub.verdict || sub.status}
+                          </Badge>
+                        </Link>
                       </div>
-                      <Badge variant={sub.verdict === 'Accepted' ? 'success' : 'destructive'}>
-                        {sub.verdict || sub.status}
-                      </Badge>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="p-8 text-center text-muted-foreground">
                     No recent submissions found. Time to solve your first problem!
@@ -141,7 +176,7 @@ export default function DashboardPage() {
             </Card>
           </motion.div>
 
-          {/* Rank Tier Progression Card */}
+          {/* Right Column: Rank Tier Progression & Global Leaderboard Cards */}
           <motion.div {...fadeSlideUp} className="space-y-4">
             <h3 className="text-xl font-semibold flex items-center gap-2">
               <Award className="h-5 w-5 text-primary" />
@@ -191,12 +226,57 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 bg-card/20 backdrop-blur-sm opacity-60">
-              <CardHeader className="p-4">
-                <CardTitle className="text-base">Global Leaderboard</CardTitle>
-                <CardDescription className="text-xs">Compete in PvP matches to climb global rankings.</CardDescription>
+            {/* Section 2.2: Real Global Leaderboard Summary Card */}
+            <Card className="border-border/50 bg-card/40 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-yellow-500" />
+                    Global Leaderboard
+                  </CardTitle>
+                  <Badge variant="outline" className="text-[10px] font-mono">
+                    Official
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs">
+                  Your current standing among all competitive arena combatants.
+                </CardDescription>
               </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                {isRankLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  </div>
+                ) : isRankError ? (
+                  <div className="p-3 rounded-lg bg-white/5 text-xs text-muted-foreground text-center">
+                    Unable to load rank standing.
+                  </div>
+                ) : rankData?.rank ? (
+                  <div className="p-3 rounded-xl bg-background/50 border border-border/40 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] text-muted-foreground block">Your Global Standing</span>
+                      <span className="text-xl font-extrabold font-mono text-foreground">
+                        #{rankData.rank}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-mono"> of {rankData.totalUsers} combatants</span>
+                    </div>
+                    <TierBadge rating={currentRating} size="sm" showLabel={false} />
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-lg bg-white/5 text-xs text-muted-foreground text-center">
+                    Complete your first 1v1 battle to enter the global standings.
+                  </div>
+                )}
+
+                <Button variant="outline" size="sm" asChild className="w-full text-xs font-semibold border-white/10 hover:bg-white/5">
+                  <Link to="/leaderboard" className="flex items-center justify-center gap-1.5">
+                    <span>View Global Leaderboard</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </Button>
+              </CardContent>
             </Card>
+
           </motion.div>
 
         </div>

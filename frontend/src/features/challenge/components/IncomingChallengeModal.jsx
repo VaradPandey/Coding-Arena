@@ -152,10 +152,10 @@ export const IncomingChallengeModal = () => {
                 <h3 className="text-base font-bold text-white truncate">
                   {challenger?.username}
                 </h3>
-                <TierBadge rating={challenger?.rating || 1500} size="sm" />
+                <TierBadge rating={challenger?.rating ?? 0} size="sm" />
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Rating: <span className="font-semibold text-neutral-200">{challenger?.rating || 1500}</span>
+                Rating: <span className="font-semibold text-neutral-200">{challenger?.rating ?? 0}</span>
               </p>
               <p className="text-[11px] text-primary/80 mt-1 font-medium">
                 Wants to challenge you to a private match!

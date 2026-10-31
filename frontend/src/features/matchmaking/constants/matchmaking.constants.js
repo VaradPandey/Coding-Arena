@@ -38,17 +38,29 @@ export const GAME_MODES = [
 
 export const TIMELINE_STAGES = [
   { id: 'join', label: 'Join Queue', description: 'Enter matchmaking pool' },
-  { id: 'search', label: 'Searching', description: 'Finding an opponent with similar skill' },
+  { id: 'search', label: 'Searching', description: 'Finding an opponent in queue' },
   { id: 'found', label: 'Opponent Found', description: 'Establishing connection' },
   { id: 'prepare', label: 'Preparing Room', description: 'Generating problem set' },
   { id: 'start', label: 'Contest Begins', description: 'Good luck!' }
 ];
 
 export const MATCHMAKING_RULES = [
-  { title: 'Rating-Based Matchmaking', description: 'You are matched against developers within a strict Elo rating range to ensure fair competition.' },
-  { title: 'Hidden Test Cases', description: 'Code must pass all hidden edge cases to achieve an Accepted verdict.' },
-  { title: 'Time Penalties', description: 'Incorrect submissions will incur a time penalty on your final score.' },
-  { title: 'Competitive Scoring', description: 'The first to solve all problems, or the highest score when time expires, wins.' }
+  { 
+    title: 'Matchmaking Order (FIFO)', 
+    description: 'Players are matched in first-in, first-out (FIFO) order with the first available opponent in the queue. Rating-based / Elo matchmaking brackets are planned for a future update.' 
+  },
+  { 
+    title: 'Hidden Test Cases', 
+    description: 'Code must pass all hidden edge cases to achieve an Accepted verdict.' 
+  },
+  { 
+    title: 'Time Penalties', 
+    description: 'Incorrect submissions will incur a time penalty on your final score.' 
+  },
+  { 
+    title: 'Competitive Scoring', 
+    description: 'The first to solve all problems, or the highest score when time expires, wins.' 
+  }
 ];
 
 export const FUTURE_FEATURES = [
