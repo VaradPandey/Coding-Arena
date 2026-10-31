@@ -14,8 +14,8 @@ model User {
   passwordHash    String
   displayName     String?
   avatar          String?
-  rating          Int      @default(1500)
-  maxRating       Int      @default(1500)
+  rating          Int      @default(0)
+  maxRating       Int      @default(0)
   wins            Int      @default(0)
   losses          Int      @default(0)
   draws           Int      @default(0)

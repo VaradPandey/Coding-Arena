@@ -28,7 +28,9 @@ class AuthService {
             data: {
                 username,
                 email,
-                passwordHash
+                passwordHash,
+                rating: 0,
+                maxRating: 0
             }
         });
 

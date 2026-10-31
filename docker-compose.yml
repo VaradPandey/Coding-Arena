@@ -1,0 +1,53 @@
+services:
+  # Asynchronous C++ Judge Worker
+  judge-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: coding-arena-worker:latest
+    container_name: coding-arena-judge-worker
+    user: "1001:1001"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 100
+    tmpfs:
+      - /tmp:size=64M,noexec,nosuid,nodev
+      - /app/judge/runs:size=128M,exec,nosuid,nodev,uid=1001,gid=1001
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=development
+      - APP_MODE=local
+      # Connects to the host's Redis (redis-mcp on port 6379)
+      - REDIS_URL=${DOCKER_REDIS_URL:-redis://host.docker.internal:6379}
+      - LOCAL_REDIS_URL=${DOCKER_REDIS_URL:-redis://host.docker.internal:6379}
+      - WORKER_PORT=10000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "10000:10000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Optional standalone Redis (only needed if host Redis is not running)
+  # Run with: docker compose --profile with-redis up redis
+  redis:
+    profiles:
+      - with-redis
+    image: redis:7-alpine
+    container_name: coding-arena-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

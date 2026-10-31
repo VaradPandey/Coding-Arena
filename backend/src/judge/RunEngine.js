@@ -50,12 +50,11 @@ class RunEngine {
         const runDir = path.join(__dirname, '..', '..', 'judge', 'runs', `run_${runId}`);
         await fs.mkdir(runDir, { recursive: true });
 
-        let executablePath;
         try {
-            executablePath = await cppCompiler.compile(sourceCode, runDir);
-        } catch (error) {
-            if (error.message === 'Compilation Error') {
-                await fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
+            let executablePath;
+            try {
+                executablePath = await cppCompiler.compile(sourceCode, runDir);
+            } catch (error) {
                 return {
                     status: 'completed',
                     verdict: 'Compilation Error',
@@ -64,71 +63,75 @@ class RunEngine {
                     test_results: []
                 };
             }
-            throw error;
-        }
 
-        let overallVerdict = 'Accepted';
-        let maxExecutionTimeMs = 0;
-        const testResults = [];
+            let overallVerdict = 'Accepted';
+            let maxExecutionTimeMs = 0;
+            const testResults = [];
 
-        // Execute all public sample tests sequentially
-        for (const test of testCases) {
-            const inputFilePath = path.join(runDir, `sample_${test.case_order}.in`);
-            const expectedOutputPath = path.join(runDir, `sample_${test.case_order}.out`);
-            
-            await fs.writeFile(inputFilePath, test.input_data);
-            await fs.writeFile(expectedOutputPath, test.output_data);
-
-            let status = '';
-            let executionTimeMs = 0;
-            let actualOutput = '';
-
-            try {
-                const result = await executor.run(executablePath, inputFilePath, timeLimit);
-                actualOutput = result.stdoutData;
-                executionTimeMs = result.executionTimeMs;
-                maxExecutionTimeMs = Math.max(maxExecutionTimeMs, executionTimeMs);
+            // Execute all public sample tests sequentially
+            for (const test of testCases) {
+                const inputFilePath = path.join(runDir, `sample_${test.case_order}.in`);
+                const expectedOutputPath = path.join(runDir, `sample_${test.case_order}.out`);
                 
-                // Compare using existing OutputComparator
-                status = await outputComparator.compare(actualOutput, expectedOutputPath);
-            } catch (error) {
-                status = error.message === 'Time Limit Exceeded' ? 'Time Limit Exceeded' : 'Runtime Error';
-                // Note: The execution time could be estimated, but for RE/TLE we'll just set it to what we know or limit
-                executionTimeMs = status === 'Time Limit Exceeded' ? timeLimit : 0;
-                maxExecutionTimeMs = Math.max(maxExecutionTimeMs, executionTimeMs);
+                await fs.writeFile(inputFilePath, test.input_data);
+                await fs.writeFile(expectedOutputPath, test.output_data);
+
+                let status = '';
+                let executionTimeMs = 0;
+                let actualOutput = '';
+
+                try {
+                    const result = await executor.run(executablePath, inputFilePath, timeLimit);
+                    actualOutput = result.stdoutData;
+                    executionTimeMs = result.executionTimeMs;
+                    maxExecutionTimeMs = Math.max(maxExecutionTimeMs, executionTimeMs);
+                    
+                    // Compare using existing OutputComparator
+                    status = await outputComparator.compare(actualOutput, expectedOutputPath);
+                } catch (error) {
+                    if (error.message === 'Time Limit Exceeded') {
+                        status = 'Time Limit Exceeded';
+                    } else if (error.message.includes('Output Limit')) {
+                        status = 'Output Limit Exceeded';
+                    } else {
+                        status = 'Runtime Error';
+                    }
+                    executionTimeMs = status === 'Time Limit Exceeded' ? timeLimit : 0;
+                    maxExecutionTimeMs = Math.max(maxExecutionTimeMs, executionTimeMs);
+                }
+
+                testResults.push({
+                    test_case: test.case_order,
+                    status,
+                    execution_time_ms: executionTimeMs,
+                    input: test.input_data,
+                    expected_output: test.output_data,
+                    actual_output: actualOutput
+                });
+
+                // Update overall verdict (downgrade priority logic)
+                if (status === 'Runtime Error' && overallVerdict !== 'Runtime Error') {
+                    overallVerdict = 'Runtime Error';
+                } else if (status === 'Output Limit Exceeded' && overallVerdict !== 'Runtime Error') {
+                    overallVerdict = 'Output Limit Exceeded';
+                } else if (status === 'Time Limit Exceeded' && overallVerdict !== 'Runtime Error' && overallVerdict !== 'Output Limit Exceeded') {
+                    overallVerdict = 'Time Limit Exceeded';
+                } else if (status === 'Wrong Answer' && overallVerdict === 'Accepted') {
+                    overallVerdict = 'Wrong Answer';
+                }
             }
 
-            testResults.push({
-                test_case: test.case_order,
-                status,
-                execution_time_ms: executionTimeMs,
-                input: test.input_data,
-                expected_output: test.output_data,
-                actual_output: actualOutput
-            });
-
-            // Update overall verdict (downgrade priority logic)
-            // Priority: CE > RE > TLE > WA > Accepted
-            // We already handled CE.
-            if (status === 'Runtime Error' && overallVerdict !== 'Runtime Error') {
-                overallVerdict = 'Runtime Error';
-            } else if (status === 'Time Limit Exceeded' && overallVerdict !== 'Runtime Error') {
-                overallVerdict = 'Time Limit Exceeded';
-            } else if (status === 'Wrong Answer' && overallVerdict === 'Accepted') {
-                overallVerdict = 'Wrong Answer';
-            }
+            return {
+                status: 'completed',
+                verdict: overallVerdict,
+                execution_time_ms: maxExecutionTimeMs,
+                compiler_output: null,
+                test_results: testResults
+            };
+        } finally {
+            // Guaranteed cleanup of run directory
+            await fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
         }
-
-        // Cleanup
-        await fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
-
-        return {
-            status: 'completed',
-            verdict: overallVerdict,
-            execution_time_ms: maxExecutionTimeMs,
-            compiler_output: null,
-            test_results: testResults
-        };
     }
 }
 

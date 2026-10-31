@@ -123,8 +123,8 @@ class MatchService {
 
             // Casual / Unranked mode check
             const isRanked = room.mode !== 'casual';
-            const p1NewRating = isRanked ? Math.max(100, p1.rating + p1Delta) : p1.rating;
-            const p2NewRating = isRanked ? Math.max(100, p2.rating + p2Delta) : p2.rating;
+            const p1NewRating = isRanked ? Math.max(0, p1.rating + p1Delta) : p1.rating;
+            const p2NewRating = isRanked ? Math.max(0, p2.rating + p2Delta) : p2.rating;
 
             const TIERS = [
                 { name: 'Bronze', title: 'Novice', min: 0, max: 1199, color: '#f59e0b', badge: 'Shield' },

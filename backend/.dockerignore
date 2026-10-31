@@ -1,7 +1,6 @@
 node_modules
 .env
 .env.*
-judge/cache/*
 judge/runs/*
 exports/*
 .git

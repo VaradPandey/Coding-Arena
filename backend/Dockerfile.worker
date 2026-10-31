@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Create dedicated unprivileged system user for the judge worker
+RUN groupadd -r judge && useradd -r -g judge -u 1001 -m -d /home/judge -s /bin/bash judge
+
 WORKDIR /app
 
 # Copy dependency definitions and Prisma schema
@@ -22,13 +25,16 @@ RUN npx prisma generate
 # Copy source code
 COPY . .
 
-# Create cache and run execution directories with appropriate permissions
-RUN mkdir -p judge/cache judge/runs
+# Create cache and run execution directories with appropriate unprivileged ownership
+RUN mkdir -p judge/cache judge/runs \
+    && chown -R judge:judge /app /home/judge
 
 ENV NODE_ENV=production
 ENV PORT=10000
 EXPOSE 10000
 
+# Do not run worker or compiled code as root
+USER judge
+
 # Start the BullMQ submission judge worker
 CMD ["node", "src/workers/submissionWorker.js"]
-

@@ -2,23 +2,23 @@
     {
         "problem_id": 1,
         "archive": "001-private.zip",
-        "checksum": "5660e882f52b8c3c2e226b87d83b77738c2324e27ce1369bf99d00ee8822f11f",
-        "version": 2,
+        "checksum": "fbc957f0df2717f8b213dc873bd3536e135be4ccd6b125f04c8d620d2d2146d4",
+        "version": 1,
         "archive_size_bytes": 3993481,
         "file_id": null
     },
     {
         "problem_id": 2,
         "archive": "002-private.zip",
-        "checksum": "a6d8176f4faebf15886f76e940929b002e5d3588996a10626e7deb0f5f277668",
-        "version": 2,
+        "checksum": "1556c02be4d865fb58fad4a5677258a90020cea20d3e1a219a3827dc8d835d78",
+        "version": 1,
         "archive_size_bytes": 1013984,
         "file_id": null
     },
     {
         "problem_id": 3,
         "archive": "003-private.zip",
-        "checksum": "948703eba35c6f3b04ac9c9a6fd11bd1e56442679c5fee111ead3f92b4ef7b01",
+        "checksum": "4737492e6f0f06703eaa904f49dfbf9f1a8a275cc5d57663ec0560877cd368c1",
         "version": 1,
         "archive_size_bytes": 1174862,
         "file_id": null
@@ -26,63 +26,63 @@
     {
         "problem_id": 4,
         "archive": "004-private.zip",
-        "checksum": "b17b0df96be37deea6f92b58878e36ac07cad8c0b32b86abe6a86db15c28b3ef",
+        "checksum": "3a0bbcb88eb1b72a85c58f895613324a6f5b995185100ddf060c7e7ded020205",
         "version": 1,
-        "archive_size_bytes": 19864880,
+        "archive_size_bytes": 19864886,
         "file_id": null
     },
     {
         "problem_id": 5,
         "archive": "005-private.zip",
-        "checksum": "8d7d58d6c5a9caa4c2f060106b775a921aa17f6b2c6ae68cc03c8160b660b362",
+        "checksum": "9f3aee27aac68f1b0e8c37fec3d3003c93fddf18bd428da4bfd7804387687fcc",
         "version": 1,
-        "archive_size_bytes": 11080758,
+        "archive_size_bytes": 11080764,
         "file_id": null
     },
     {
         "problem_id": 6,
         "archive": "006-private.zip",
-        "checksum": "14ffd8471ab2e4545179f2cd81f076ad51a97d159a7a034be65d3d3c5fcd3852",
+        "checksum": "b7f8cf1479cc44339f5bae1aaaa41ee9f0bccdbd38ae5407fc742861dcfe338b",
         "version": 1,
-        "archive_size_bytes": 24958083,
+        "archive_size_bytes": 24958091,
         "file_id": null
     },
     {
         "problem_id": 7,
         "archive": "007-private.zip",
-        "checksum": "1a7b2827452175e08e23791331cf40a9471726be4ad7d8ab9237e83f5ecb58e8",
+        "checksum": "ac4a6e3ec0b2e9e96a80dddfc0947b73a8617f2100d739d7f06cef9cc4304827",
         "version": 1,
-        "archive_size_bytes": 23829,
+        "archive_size_bytes": 23833,
         "file_id": null
     },
     {
         "problem_id": 8,
         "archive": "008-private.zip",
-        "checksum": "4ea0dc637731474ad3e6a0ebd403690db858ddba1bfdb10fd20ffd8764a4a244",
+        "checksum": "6b3a16db2b4da65e988699b312bfb658a1eb0bac91f12c13a21a380e254d5164",
         "version": 1,
-        "archive_size_bytes": 11741702,
+        "archive_size_bytes": 11741708,
         "file_id": null
     },
     {
         "problem_id": 9,
         "archive": "009-private.zip",
-        "checksum": "5cb6364007641dcfaacbd678cde5ad98cd25a43b5a93d5265ee6030f3b197864",
+        "checksum": "9eb12bd3aee60f141068b68c7342b3335960206fadc18b53ad09c36317b59386",
         "version": 1,
-        "archive_size_bytes": 8515318,
+        "archive_size_bytes": 8515319,
         "file_id": null
     },
     {
         "problem_id": 10,
         "archive": "010-private.zip",
-        "checksum": "e1ac38eee140a2cb9c57d6ee007a8f7a21cb374a5ad33203001cb856dfddca9d",
+        "checksum": "639b2160187aa853c21aec2c409ac85c5b24d3de1eed9717eea43b800eaec978",
         "version": 1,
-        "archive_size_bytes": 11665853,
+        "archive_size_bytes": 11665859,
         "file_id": null
     },
     {
         "problem_id": 11,
         "archive": "011-private.zip",
-        "checksum": "bc8da9714ebb3bd8c90f79c20127bfb7d28f5116cad7fe409099b3579cc6e9fa",
+        "checksum": "6e5bf80294bc6b06b8fb88ee9cc475c6ddaddc1253aaa8b1c92e0c2a2334c6d6",
         "version": 1,
         "archive_size_bytes": 1774517,
         "file_id": null
@@ -90,7 +90,7 @@
     {
         "problem_id": 12,
         "archive": "012-private.zip",
-        "checksum": "361e0299182348e07b5490451c6e7f832dfa1fa97f103955b2160ad0c557a8b1",
+        "checksum": "9747da94ab4d79c35f54f52f9be25153a8add2cafea3adb9a9f8900d066fed1e",
         "version": 1,
         "archive_size_bytes": 5808385,
         "file_id": null
@@ -98,7 +98,7 @@
     {
         "problem_id": 13,
         "archive": "013-private.zip",
-        "checksum": "b93f0a75d4ae0805668745e3862f76b3889550cfd712f47718371d1d4e7f1c23",
+        "checksum": "aa9860ca5880d2b878c6419485b12893064c6dace5172b8b71351a01aa385ebd",
         "version": 1,
         "archive_size_bytes": 50493095,
         "file_id": null
@@ -106,7 +106,7 @@
     {
         "problem_id": 14,
         "archive": "014-private.zip",
-        "checksum": "2ee28d22401a3aaed52b7d5b3ce33115b307e0be3d15b1ad366e52fa19d3074e",
+        "checksum": "207fd150459358cb40b40173d1a9203cd3b136b1ff96fab468475bc5a309f9dd",
         "version": 1,
         "archive_size_bytes": 8256559,
         "file_id": null
@@ -114,7 +114,7 @@
     {
         "problem_id": 15,
         "archive": "015-private.zip",
-        "checksum": "257c2e3298d224486daa1ce6f75ef6ed8e24187d0dfc69ce4981caa20bd84a5c",
+        "checksum": "16d096a8356230638f43ef5f14a719599469eeb40804d0b20cddd66d99f6ad2c",
         "version": 1,
         "archive_size_bytes": 27746085,
         "file_id": null
@@ -122,7 +122,7 @@
     {
         "problem_id": 16,
         "archive": "016-private.zip",
-        "checksum": "911fc6f332aeac5b58bc425ecfa9a650aa96bb94cd2b9e1a72ac62a28f35cef2",
+        "checksum": "92b0aad5d228883fbe8013ce34213d7ec442bb5dfb513f818b8d4bfba987d6ab",
         "version": 1,
         "archive_size_bytes": 44751207,
         "file_id": null
@@ -130,7 +130,7 @@
     {
         "problem_id": 17,
         "archive": "017-private.zip",
-        "checksum": "e5b2ef4118d98e7a3ef3ee33bc4db1ebd7082b91aacd2bae957b6228e31679d7",
+        "checksum": "9f416b7aa5787244c3a281d0af22346da8591252f527dd2e9771eed4f70f5c11",
         "version": 1,
         "archive_size_bytes": 13229505,
         "file_id": null
@@ -138,7 +138,7 @@
     {
         "problem_id": 18,
         "archive": "018-private.zip",
-        "checksum": "d3f0015061553caf5f5680b74c5e89add41614535a0b4c1f9d511728753b96eb",
+        "checksum": "836ebdce333fe4db32e153525f2ee4c93906bb0d3c2e535393f737f9492a35ab",
         "version": 1,
         "archive_size_bytes": 25074910,
         "file_id": null
@@ -146,7 +146,7 @@
     {
         "problem_id": 19,
         "archive": "019-private.zip",
-        "checksum": "1027244939e55c6f05e3b6bc1e0c48c202b25891ee42d03a91b8bd27a1846e7a",
+        "checksum": "37c1bb4be9b9f3f85ceef43b4ce2fb0d87ae345b4c24819c42931d5bea19ebe8",
         "version": 1,
         "archive_size_bytes": 14564918,
         "file_id": null
@@ -154,7 +154,7 @@
     {
         "problem_id": 20,
         "archive": "020-private.zip",
-        "checksum": "0f80aa2d931a0821e49c5508efb36295c302b8f4ed092e8d6e8cbc1d5802a308",
+        "checksum": "7d3af290716aa5d7cb8c386accbb62e30ad7b3bc6428ed0e80844a4a06063eff",
         "version": 1,
         "archive_size_bytes": 13457818,
         "file_id": null

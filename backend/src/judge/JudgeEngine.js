@@ -44,65 +44,68 @@ class JudgeEngine {
 
         const runDir = path.join(__dirname, '..', '..', 'judge', 'runs', String(submissionId));
         
-        // 3. Compile
-        let executablePath;
         try {
-            executablePath = await cppCompiler.compile(source_code, runDir);
-        } catch (error) {
-            if (error.message === 'Compilation Error') {
+            // 3. Compile with strict limits and timeouts
+            let executablePath;
+            try {
+                executablePath = await cppCompiler.compile(source_code, runDir);
+            } catch (error) {
                 return { verdict: "Compilation Error", executionTimeMs: 0 };
             }
-            throw error;
-        }
 
-        // 4. Discover all test cases
-        let testCases = [];
-        try {
-            const files = await fs.readdir(cacheDir);
-            testCases = files
-                .filter(f => f.endsWith('.in'))
-                .map(f => f.replace('.in', ''))
-                .sort(); // Sorting ensures 001.in comes before 002.in
-        } catch (error) {
-            console.error(`Failed to read cache directory for problem ${problem_id}:`, error);
-            throw error;
-        }
-
-        // 5. Execute all test cases sequentially
-        let maxExecutionTimeMs = 0;
-        let testCount = 0;
-
-        for (const testName of testCases) {
-            testCount++;
-            const inputFilePath = path.join(cacheDir, `${testName}.in`);
-            const expectedOutputPath = path.join(cacheDir, `${testName}.out`);
-            
-            let result;
+            // 4. Discover all test cases
+            let testCases = [];
             try {
-                result = await executor.run(executablePath, inputFilePath, timeLimit);
-                maxExecutionTimeMs = Math.max(maxExecutionTimeMs, result.executionTimeMs);
+                const files = await fs.readdir(cacheDir);
+                testCases = files
+                    .filter(f => f.endsWith('.in'))
+                    .map(f => f.replace('.in', ''))
+                    .sort(); // Sorting ensures 001.in comes before 002.in
             } catch (error) {
-                // TLE or RE
-                const verdict = error.message === 'Time Limit Exceeded' ? 'Time Limit Exceeded' : 'Runtime Error';
-                console.log(`[JudgeEngine] Sub ${submissionId} Failed on test ${testCount} (${testName}) - ${verdict}`);
-                fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
-                return { verdict, executionTimeMs: maxExecutionTimeMs };
+                console.error(`Failed to read cache directory for problem ${problem_id}:`, error);
+                throw error;
             }
 
-            // Compare output
-            const verdict = await outputComparator.compare(result.stdoutData, expectedOutputPath);
-            if (verdict !== 'Accepted') {
-                console.log(`[JudgeEngine] Sub ${submissionId} Failed on test ${testCount} (${testName}) - ${verdict}`);
-                fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
-                return { verdict, executionTimeMs: maxExecutionTimeMs };
+            // 5. Execute all test cases sequentially
+            let maxExecutionTimeMs = 0;
+            let testCount = 0;
+
+            for (const testName of testCases) {
+                testCount++;
+                const inputFilePath = path.join(cacheDir, `${testName}.in`);
+                const expectedOutputPath = path.join(cacheDir, `${testName}.out`);
+                
+                let result;
+                try {
+                    result = await executor.run(executablePath, inputFilePath, timeLimit);
+                    maxExecutionTimeMs = Math.max(maxExecutionTimeMs, result.executionTimeMs);
+                } catch (error) {
+                    // TLE, OLE, or RE
+                    let verdict = 'Runtime Error';
+                    if (error.message === 'Time Limit Exceeded') {
+                        verdict = 'Time Limit Exceeded';
+                    } else if (error.message.includes('Output Limit')) {
+                        verdict = 'Output Limit Exceeded';
+                    }
+                    console.log(`[JudgeEngine] Sub ${submissionId} Failed on test ${testCount} (${testName}) - ${verdict}`);
+                    return { verdict, executionTimeMs: maxExecutionTimeMs };
+                }
+
+                // Compare output
+                const verdict = await outputComparator.compare(result.stdoutData, expectedOutputPath);
+                if (verdict !== 'Accepted') {
+                    console.log(`[JudgeEngine] Sub ${submissionId} Failed on test ${testCount} (${testName}) - ${verdict}`);
+                    return { verdict, executionTimeMs: maxExecutionTimeMs };
+                }
             }
+
+            // All tests passed
+            console.log(`[JudgeEngine] Sub ${submissionId} Passed ${testCount} test cases. Max Time: ${maxExecutionTimeMs}ms`);
+            return { verdict: 'Accepted', executionTimeMs: maxExecutionTimeMs };
+        } finally {
+            // Guaranteed cleanup of run directory, source code, and binaries
+            await fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
         }
-
-        // All tests passed
-        console.log(`[JudgeEngine] Sub ${submissionId} Passed ${testCount} test cases. Max Time: ${maxExecutionTimeMs}ms`);
-        fs.rm(runDir, { recursive: true, force: true }).catch(() => {});
-
-        return { verdict: 'Accepted', executionTimeMs: maxExecutionTimeMs };
     }
 }
 

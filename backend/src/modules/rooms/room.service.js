@@ -112,9 +112,9 @@ class RoomService {
         }
 
         p1Username = p1Username || 'Player 1';
-        p1Rating = p1Rating ?? 1500;
+        p1Rating = p1Rating ?? 0;
         p2Username = p2Username || 'Player 2';
-        p2Rating = p2Rating ?? 1500;
+        p2Rating = p2Rating ?? 0;
 
         const roomState = {
             roomId,

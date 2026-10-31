@@ -33,7 +33,7 @@ class MatchmakingService {
             socketId,
             username: username || 'Player',
             joinedAt: new Date().toISOString(),
-            rating: rating ?? 1500,
+            rating: rating ?? 0,
             attemptId,
             mode: validMode
         }), 'EX', 3600); // expire in 1 hour if stuck
