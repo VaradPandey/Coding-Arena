@@ -2,7 +2,7 @@ node_modules
 .env
 .env.*
 judge/runs/*
-exports/*
+judge/cache/*
 .git
 .windsurf
 .claude

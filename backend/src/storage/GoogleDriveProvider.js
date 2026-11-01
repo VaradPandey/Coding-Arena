@@ -77,6 +77,36 @@ class GoogleDriveProvider extends StorageProvider {
             return problemCacheDir;
         }
 
+        // Check if we have the problem_bank private directory (local repo or /app/problem_bank in container)
+        const possibleDirs = [
+            path.join(__dirname, '../../../problem_bank/problems', paddedId, 'private'),
+            path.join('/app/problem_bank/problems', paddedId, 'private'),
+            path.join(process.cwd(), 'problem_bank/problems', paddedId, 'private'),
+            path.join(process.cwd(), '../problem_bank/problems', paddedId, 'private')
+        ];
+        const existingDir = possibleDirs.find(d => fs.existsSync(d));
+        if (existingDir) {
+            if (fs.existsSync(problemCacheDir)) {
+                fs.rmSync(problemCacheDir, { recursive: true, force: true });
+            }
+            fs.mkdirSync(problemCacheDir, { recursive: true });
+
+            const files = fs.readdirSync(existingDir);
+            for (const file of files) {
+                if (file.endsWith('.in') || file.endsWith('.out')) {
+                    fs.copyFileSync(path.join(existingDir, file), path.join(problemCacheDir, file));
+                }
+            }
+
+            const meta = {
+                version: asset ? asset.version : 1,
+                checksum: asset ? asset.checksum : 'local',
+                downloaded_at: new Date().toISOString()
+            };
+            fs.writeFileSync(path.join(problemCacheDir, '.meta.json'), JSON.stringify(meta, null, 2));
+            return problemCacheDir;
+        }
+
         if (!asset || !asset.file_id || asset.file_id === 'local_dev_mock') {
             throw new Error(`Google Drive asset not found for problem ${problemId}`);
         }

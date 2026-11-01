@@ -2,9 +2,6 @@ node_modules/
 .env
 .env.*
 !.env.example
-exports/google_drive/*.zip
 /judge/cache/
-
-/judge/
-
+/judge/runs/
 /src/generated/prisma

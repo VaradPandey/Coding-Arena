@@ -1,5 +1,5 @@
 services:
-  # 1. Backend API & WebSockets
+  # 1. Backend API & WebSockets Gateway
   - type: web
     name: codearena-api
     runtime: node
@@ -19,11 +19,11 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ALLOWED_ORIGINS
-        value: http://localhost:5173
+        value: http://localhost:5173,https://coding-arena.vercel.app
       - key: JUDGE_WORKER_URL
         value: https://codearena-judge-worker.onrender.com
 
-  # 2. Judge Worker (Docker Container with g++ compiler)
+  # 2. Judge Worker Sandbox (Docker Container with g++ & test suites)
   - type: web
     name: codearena-judge-worker
     runtime: docker
@@ -40,3 +40,7 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false
+      - key: PORT
+        value: 10000
+      - key: WORKER_PORT
+        value: 10000
