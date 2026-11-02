@@ -1,7 +1,8 @@
 const axios = require('axios');
+const config = require('../config');
 
 // Worker URL where the sandboxed judge worker is running
-const WORKER_URL = process.env.JUDGE_WORKER_URL || 'http://localhost:10000';
+const WORKER_URL = (config.judgeWorkerUrl || process.env.JUDGE_WORKER_URL || 'http://localhost:10000').replace(/\/+$/, '');
 const MAX_SOURCE_BYTES = 64 * 1024; // 64 KB limit
 
 class RunController {

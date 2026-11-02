@@ -8,14 +8,14 @@ const redisUrl = config.redisUrl;
 
 const connection = new (require('ioredis'))(redisUrl, {
     maxRetriesPerRequest: null,
+    enableReadyCheck: false,
     retryStrategy(times) {
-        return null;
+        return Math.min(times * 150, 4000);
     }
 });
 
 connection.on('error', (err) => {
-    console.error("❌ FATAL: Worker failed to connect to Redis:", err.message);
-    process.exit(1);
+    console.warn("⚠️ Worker Redis connection notice:", err.message);
 });
 
 const { Emitter } = require('@socket.io/redis-emitter');
@@ -258,7 +258,15 @@ const worker = new Worker('judge', async (job) => {
             WHERE id = $1
         `, [submission_id]);
     }
-}, { connection });
+}, { 
+    connection: connection.duplicate({
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        retryStrategy(times) {
+            return Math.min(times * 150, 4000);
+        }
+    })
+});
 
 worker.on('ready', () => {
     console.log("[WORKER] Redis Connected");
@@ -288,7 +296,10 @@ if (WORKER_HTTP_PORT) {
             return res.end();
         }
 
-        if (req.method === 'POST' && req.url === '/run') {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const pathname = parsedUrl.pathname.replace(/\/+$/, '') || '/';
+
+        if (req.method === 'POST' && pathname === '/run') {
             let body = '';
             req.on('data', chunk => {
                 body += chunk;

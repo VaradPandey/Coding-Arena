@@ -9,18 +9,17 @@ if (!redisUrl) {
     process.exit(1);
 }
 
-// Create a fail-fast Redis connection
+// Create an auto-reconnecting Redis connection for BullMQ producer
 const connection = new IORedis(redisUrl, {
     maxRetriesPerRequest: null,
+    enableReadyCheck: false,
     retryStrategy(times) {
-        // Do not retry, fail immediately
-        return null; 
+        return Math.min(times * 150, 4000);
     }
 });
 
 connection.on('error', (err) => {
-    console.error('❌ Failed to connect to Redis for BullMQ:', err.message);
-    process.exit(1);
+    console.warn('⚠️ BullMQ Redis connection notice:', err.message);
 });
 
 // Create the BullMQ queue
@@ -29,8 +28,7 @@ const judgeQueue = new Queue('judge', { connection });
 connection.ping().then(() => {
     console.log('✅ Successfully connected to Redis for BullMQ.');
 }).catch(err => {
-    console.error('❌ Redis client ping failed:', err.message);
-    process.exit(1);
+    console.warn('⚠️ Initial Redis ping pending/retrying:', err.message);
 });
 
 module.exports = { judgeQueue, connection };

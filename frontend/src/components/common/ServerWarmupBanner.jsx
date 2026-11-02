@@ -72,8 +72,9 @@ export const ServerWarmupBanner = () => {
     let isSubscribed = true;
     let timer = null;
     let wakeTimer = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 4;
 
-    // Only display "waking" banner if server takes longer than 2.5 seconds to respond
     wakeTimer = setTimeout(() => {
       if (isSubscribed && status === 'idle' && !isConnected) {
         setStatus('waking');
@@ -81,63 +82,41 @@ export const ServerWarmupBanner = () => {
     }, 2500);
 
     const pingServices = async () => {
-      // If socket already connected, dismiss immediately
-      if (isConnected) {
+      attempts++;
+      if (isConnected || attempts > MAX_ATTEMPTS) {
         if (isSubscribed) setStatus('dismissed');
         return;
       }
 
       let apiOk = false;
-
-      // 1. Ping API health check
-      if (apiBase) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
-          const res = await fetch(`${apiBase}/health`, { 
-            method: 'GET',
-            mode: 'cors',
-            signal: controller.signal 
-          });
-          clearTimeout(timeoutId);
-          if (res.ok) apiOk = true;
-        } catch {
-          apiOk = false;
-        }
-      } else {
-        // No explicit API base URL configured, assume online
-        apiOk = true;
-      }
-
-      // 2. Wake worker in background if URL configured (fire-and-forget, non-blocking)
-      if (workerBase) {
-        try {
-          const workerController = new AbortController();
-          const workerTimeout = setTimeout(() => workerController.abort(), 5000);
-          fetch(`${workerBase}/`, { method: 'GET', signal: workerController.signal })
-            .finally(() => clearTimeout(workerTimeout));
-        } catch {
-          // Non-blocking
-        }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        // Use relative /api/health rewrite in production to avoid adblocker ERR_BLOCKED_BY_ADBLOCKER
+        const healthUrl = isProd ? '/api/health' : `${apiBase || 'http://localhost:5000'}/api/health`;
+        const res = await fetch(healthUrl, { method: 'GET', signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) apiOk = true;
+      } catch {
+        apiOk = false;
       }
 
       if (!isSubscribed) return;
 
-      if (apiOk) {
+      if (apiOk || attempts >= MAX_ATTEMPTS) {
         clearTimeout(wakeTimer);
         setStatus((prev) => {
           if (prev === 'waking') {
             setTimeout(() => {
               if (isSubscribed) setStatus('dismissed');
-            }, 2500);
+            }, 2000);
             return 'ready';
           }
           return 'dismissed';
         });
       } else {
-        // Server still sleeping, keep retrying
         setStatus((prev) => (prev === 'dismissed' ? 'dismissed' : 'waking'));
-        timer = setTimeout(pingServices, 4000);
+        timer = setTimeout(pingServices, 3500);
       }
     };
 

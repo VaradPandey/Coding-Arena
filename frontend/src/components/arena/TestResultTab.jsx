@@ -69,7 +69,8 @@ export const TestResultTab = ({
     );
   }
 
-  const { verdict, execution_time_ms, compiler_output, test_results = [] } = runResult;
+  const { verdict: rawVerdict, execution_time_ms, compiler_output, test_results = [] } = runResult;
+  const verdict = rawVerdict || (runResult.error ? 'Execution Error' : (test_results.length === 0 ? 'Execution Finished' : 'Finished'));
   const isAccepted = verdict?.toLowerCase() === 'accepted';
   const isWrongAnswer = verdict?.toLowerCase() === 'wrong answer';
   const isTLE = verdict?.toLowerCase() === 'time limit exceeded';
@@ -138,6 +139,18 @@ export const TestResultTab = ({
           </span>
           <pre className="p-3.5 rounded-lg bg-[#0d0707] border border-orange-500/20 font-mono text-xs text-orange-200 whitespace-pre-wrap overflow-x-auto leading-relaxed">
             {compiler_output}
+          </pre>
+        </div>
+      )}
+
+      {/* Runner Error Output */}
+      {runResult.error && (
+        <div className="space-y-1.5 flex-1 overflow-y-auto custom-scrollbar">
+          <span className="text-xs font-semibold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+            <AlertTriangle size={13} /> Execution Notice
+          </span>
+          <pre className="p-3.5 rounded-lg bg-[#0d0707] border border-rose-500/20 font-mono text-xs text-rose-200 whitespace-pre-wrap overflow-x-auto leading-relaxed">
+            {runResult.error}
           </pre>
         </div>
       )}
