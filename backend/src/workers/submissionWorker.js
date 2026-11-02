@@ -105,9 +105,8 @@ return cjson.encode({
 })
 `;
 
-const worker = new Worker('judge', async (job) => {
-    const { submission_id, problem_id, language, user_id } = job.data;
-    console.log(`Processing submission ${submission_id} for problem ${problem_id} (Language: ${language})`);
+async function executeSubmissionJob(submission_id, problem_id, language, user_id) {
+    console.log(`[Worker] Processing submission ${submission_id} for problem ${problem_id} (Language: ${language})`);
 
     try {
         // Mark as running
@@ -198,57 +197,54 @@ const worker = new Worker('judge', async (job) => {
 
         // 6. Broadcast to Socket Room if part of a contest
         if (user_id) {
-            const roomId = await connection.get(`matchmaking:player:${user_id}`);
-            if (roomId) {
-                // Atomically update the score using Lua script to prevent race conditions and duplicate points
-                const resultStr = await connection.eval(
-                    LUA_UPDATE_SCORE, 
-                    1, 
-                    roomId, 
-                    user_id, 
-                    problem_id, 
-                    verdict,
-                    100
-                );
-                
-                if (resultStr) {
-                    const result = JSON.parse(resultStr);
+            try {
+                const roomId = await connection.get(`matchmaking:player:${user_id}`);
+                if (roomId) {
+                    const resultStr = await connection.eval(
+                        LUA_UPDATE_SCORE, 
+                        1, 
+                        roomId, 
+                        user_id, 
+                        problem_id, 
+                        verdict,
+                        100
+                    );
                     
-                    if (result.error) {
-                        console.log(`[Worker] Skipping update, Lua returned: ${result.error}`);
-                    } else {
-                        ioEmitter.to(roomId).emit('SCORE_UPDATED', {
-                            userId: user_id,
-                            problemId: problem_id,
-                            verdict,
-                            pointsAwarded: result.pointsAwarded,
-                            penaltyDeduction: result.penaltyDeduction || 0,
-                            newTotalScore: result.newTotalScore,
-                            penaltyCount: result.penaltyCount || 0,
-                            penalties: result.penalties || {},
-                            attempts: result.attempts || {}
-                        });
+                    if (resultStr) {
+                        const result = JSON.parse(resultStr);
+                        if (!result.error) {
+                            ioEmitter.to(roomId).emit('SCORE_UPDATED', {
+                                userId: user_id,
+                                problemId: problem_id,
+                                verdict,
+                                pointsAwarded: result.pointsAwarded,
+                                penaltyDeduction: result.penaltyDeduction || 0,
+                                newTotalScore: result.newTotalScore,
+                                penaltyCount: result.penaltyCount || 0,
+                                penalties: result.penalties || {},
+                                attempts: result.attempts || {}
+                            });
 
-                        
-                        if (result.matchEnded) {
-                            try {
-                                const finalResult = await matchService.finalizeMatch(roomId, result.winnerId, 'ALL_PROBLEMS_SOLVED');
-                                if (finalResult) {
-                                    ioEmitter.to(roomId).emit('MATCH_FINISHED', finalResult);
+                            if (result.matchEnded) {
+                                try {
+                                    const finalResult = await matchService.finalizeMatch(roomId, result.winnerId, 'ALL_PROBLEMS_SOLVED');
+                                    if (finalResult) {
+                                        ioEmitter.to(roomId).emit('MATCH_FINISHED', finalResult);
+                                    }
+                                } catch (err) {
+                                    console.error('Error during early match finalization:', err);
                                 }
-                            } catch (err) {
-                                console.error('Error during early match finalization:', err);
                             }
                         }
                     }
                 }
+            } catch (err) {
+                console.error('[Worker] Error broadcasting match score:', err.message);
             }
         }
 
     } catch (error) {
         console.error(`[Worker] Failed to process submission ${submission_id}:`, error);
-        
-        // On hard failure, update to Internal Error
         await pool.query(`
             UPDATE submissions 
             SET status = 'completed', 
@@ -258,15 +254,13 @@ const worker = new Worker('judge', async (job) => {
             WHERE id = $1
         `, [submission_id]);
     }
-}, { 
-    connection: connection.duplicate({
-        maxRetriesPerRequest: null,
-        enableReadyCheck: false,
-        retryStrategy(times) {
-            return Math.min(times * 150, 4000);
-        }
-    })
-});
+}
+
+// 1. Primary BullMQ Worker (uses main connected Redis instance)
+const worker = new Worker('judge', async (job) => {
+    const { submission_id, problem_id, language, user_id } = job.data;
+    await executeSubmissionJob(submission_id, problem_id, language, user_id);
+}, { connection });
 
 worker.on('ready', () => {
     console.log("[WORKER] Redis Connected");
@@ -275,8 +269,36 @@ worker.on('ready', () => {
 });
 
 worker.on('error', (err) => {
-    console.error("❌ Judge Worker encountered an error:", err);
+    console.warn("⚠️ Judge Worker BullMQ warning:", err.message);
 });
+
+// 2. Autonomous Database Reconciliation: sweeps queued submissions left behind while sleeping
+let isReconciling = false;
+async function reconcilePendingSubmissions() {
+    if (isReconciling) return;
+    isReconciling = true;
+    try {
+        const { rows } = await pool.query(`
+            SELECT id, problem_id, language, user_id 
+            FROM submissions 
+            WHERE status = 'queued'
+            ORDER BY id ASC
+            LIMIT 5
+        `);
+        for (const row of rows) {
+            console.log(`[Reconciler] Found queued submission #${row.id}, judging now...`);
+            await executeSubmissionJob(row.id, row.problem_id, row.language, row.user_id);
+        }
+    } catch (err) {
+        console.error('[Reconciler] Error checking queued submissions:', err.message);
+    } finally {
+        isReconciling = false;
+    }
+}
+
+// Run reconciliation immediately on startup and every 8 seconds
+setTimeout(reconcilePendingSubmissions, 1000);
+setInterval(reconcilePendingSubmissions, 8000);
 
 // Render Web Service Health Check & Synchronous Sample Runner Server
 const http = require('http');
@@ -321,6 +343,9 @@ if (WORKER_HTTP_PORT) {
             });
             return;
         }
+
+        // Trigger immediate DB sweep on any health check or wake-up ping from the API
+        setImmediate(reconcilePendingSubmissions);
 
         res.writeHead(200, { 
             'Content-Type': 'application/json'

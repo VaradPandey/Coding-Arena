@@ -4,7 +4,7 @@ const config = require('../config');
 class JudgeWorkerPingService {
     constructor() {
         this.lastPingTimestamp = 0;
-        this.throttleIntervalMs = 45000; // 45 seconds debounce window
+        this.throttleIntervalMs = 15000; // 15 seconds debounce window
         this.isPingInProgress = false;
     }
 
@@ -23,8 +23,8 @@ class JudgeWorkerPingService {
         }
 
         const now = Date.now();
-        if (now - this.lastPingTimestamp < this.throttleIntervalMs && !this.isPingInProgress) {
-            // Already pinged recently; Render container is either already spinning up or active
+        if (now - this.lastPingTimestamp < this.throttleIntervalMs && this.isPingInProgress) {
+            // Ping already in flight
             return;
         }
 
@@ -37,9 +37,8 @@ class JudgeWorkerPingService {
             console.log(`[JudgePing] Triggering worker wake-up (reason: ${triggerReason}) -> ${targetUrl}`);
 
             try {
-                // A 10-second timeout is plenty: Render edge triggers roll-up upon receiving the inbound connection
                 const response = await axios.get(targetUrl, {
-                    timeout: 10000,
+                    timeout: 25000,
                     headers: { 'User-Agent': 'CodeArena-API-WorkerPing/1.0' }
                 });
 
